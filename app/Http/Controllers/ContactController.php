@@ -10,15 +10,7 @@ class ContactController extends Controller
 {
     public function index()
     {
-        return view('contacts.index', ['contacts' => Contact::orderBy('id', 'desc')->where(function ($query) {
-            if($companyId = request('company_id')){
-                $query->where('company_id', $companyId);
-            }
-
-            if($search = request('search')){
-                $query->where('first_name', 'LIKE', "%{$search}%");
-            }
-        })->paginate(10),
+        return view('contacts.index', ['contacts' => Contact::LatestFirst()->paginate(10),
         'companies' => Company::orderBy('name')->pluck('name','id')->prepend('All Companies', '')]);
     }
 
