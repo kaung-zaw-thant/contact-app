@@ -8,12 +8,28 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SearchScope implements Scope
 {
+    protected $searchColumns = [];
     public function apply(Builder $builder, Model $model)
     {
         if($search = request('search')) {
-            $builder->where('first_name', 'LIKE', "%{$search}%");
-            $builder->OrWhere('last_name', 'LIKE', "%{$search}%");
-            $builder->OrWhere('email', 'LIKE', "%{$search}%");
+            $columns = property_exists($model, 'searchColumns') ? $model->searchColumns : $this->searchColumns;
+            foreach($columns as $index => $column)
+            {
+                $method = $index === 0 ? "where" : "orWhere";
+
+                $arr = explode('.',$column);
+                if(count($arr) == 2)
+                {
+                    $method .= 'Has';
+                    list($relationship, $col) = $arr;
+                    $builder->$method($relationship, function($query) use ($search, $col) {
+                        $query->where($col, 'LIKE', "%{$search}%");
+                    });
+                } else {
+                    $builder->$method($column, 'LIKE', "%{$search}%");
+                }
+
+            }
         }
     }
 }
